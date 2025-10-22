@@ -1,4 +1,4 @@
-# RNA-seq Data Downloader
+# Seq_GEO_Downloader
 
 A user-friendly tool for downloading RNA-seq data from NCBI's SRA database with automatic SRA Toolkit management and interactive guidance.
 
@@ -210,7 +210,7 @@ SRR1234569	Sample3	Control
 ```bash
 $ python seq_downloader.py
 
-Welcome to RNA-seq Downloader v1.0.0
+Welcome to Seq Downloader v1.0.0
 --------------------------------------------------
 💡 Help: GSE numbers automatically fetch SRA accessions from NCBI GEO
    SRA list files let you specify exact accessions to download
@@ -410,7 +410,7 @@ Detailed logs are saved in the `logs/` directory:
 ## 📂 Project Structure
 
 ```
-rna-seq-downloader/
+seq-downloader/
 ├── seq_downloader.py          # Main entry point with CLI
 ├── requirements.txt           # Python dependencies
 ├── test_requirements.txt      # Testing dependencies
@@ -492,5 +492,6 @@ For issues and questions:
 4. Ensure all requirements are met
 
 ---
+
 
 **Happy RNA-seq downloading! 🧬**
