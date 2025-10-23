@@ -8,6 +8,7 @@ from typing import Optional, List
 
 from .config import DEFAULT_OUTPUT_DIR, DEFAULT_LOG_DIR
 from .gse_fetcher import GSEFetcher
+from .sra_downloader import SRADownloader
 
 
 class MainController:
@@ -18,6 +19,7 @@ class MainController:
         self.output_dir = DEFAULT_OUTPUT_DIR
         self.log_dir = DEFAULT_LOG_DIR
         self.gse_fetcher = GSEFetcher()
+        self.sra_downloader = None  # Will be initialized with user settings
         self.setup_logging()
     
     def setup_logging(self):
@@ -95,17 +97,32 @@ class MainController:
         
         print(f"Will download {len(sra_ids)} SRA ID(s): {', '.join(sra_ids)}")
         
-        # Get output directory
+        # Get download settings
         output_dir = self.get_output_directory()
+        max_threads = self.get_thread_count()
+        split_files = self.get_split_files_option()
         
-        # Simulate download process (replace with actual implementation)
-        print(f"Starting download to: {output_dir}")
-        for sra_id in sra_ids:
-            print(f"Processing {sra_id}...")
-            # TODO: Implement actual SRA download logic
+        # Initialize downloader with settings
+        self.sra_downloader = SRADownloader(output_dir=output_dir, max_threads=max_threads)
         
-        print("Download completed successfully!")
-        return 0
+        # Start download
+        print(f"\nStarting download to: {output_dir}")
+        print(f"Using {max_threads} threads, split files: {split_files}")
+        print("-" * 50)
+        
+        results = self.sra_downloader.download_sra_ids(sra_ids, split_files=split_files)
+        
+        # Check results
+        successful = sum(1 for success in results.values() if success)
+        if successful == len(sra_ids):
+            print("\n✅ All downloads completed successfully!")
+            return 0
+        elif successful > 0:
+            print(f"\n⚠️  Partial success: {successful}/{len(sra_ids)} downloads completed")
+            return 1
+        else:
+            print("\n❌ All downloads failed")
+            return 1
     
     def handle_gse_download(self) -> int:
         """Handle GSE number download process."""
@@ -134,17 +151,32 @@ class MainController:
             
             print(f"Found {len(sra_ids)} SRA ID(s): {', '.join(sra_ids)}")
             
-            # Get output directory
+            # Get download settings
             output_dir = self.get_output_directory()
+            max_threads = self.get_thread_count()
+            split_files = self.get_split_files_option()
             
-            # Simulate download process (replace with actual implementation)
-            print(f"Starting download to: {output_dir}")
-            for sra_id in sra_ids:
-                print(f"Processing {sra_id}...")
-                # TODO: Implement actual SRA download logic
+            # Initialize downloader with settings
+            self.sra_downloader = SRADownloader(output_dir=output_dir, max_threads=max_threads)
             
-            print("Download completed successfully!")
-            return 0
+            # Start download
+            print(f"\nStarting download to: {output_dir}")
+            print(f"Using {max_threads} threads, split files: {split_files}")
+            print("-" * 50)
+            
+            results = self.sra_downloader.download_sra_ids(sra_ids, split_files=split_files)
+            
+            # Check results
+            successful = sum(1 for success in results.values() if success)
+            if successful == len(sra_ids):
+                print("\n✅ All downloads completed successfully!")
+                return 0
+            elif successful > 0:
+                print(f"\n⚠️  Partial success: {successful}/{len(sra_ids)} downloads completed")
+                return 1
+            else:
+                print("\n❌ All downloads failed")
+                return 1
             
         except Exception as e:
             self.logger.error(f"Error fetching SRA IDs for {gse_number}: {e}")
@@ -165,3 +197,34 @@ class MainController:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
         return output_dir
+    
+    def get_thread_count(self) -> int:
+        """Get the number of threads for parallel downloads."""
+        print(f"\nThread count for parallel downloads (1-16, default: 4)")
+        while True:
+            user_input = input("Enter thread count or press Enter for default: ").strip()
+            
+            if not user_input:
+                return 4
+            
+            try:
+                thread_count = int(user_input)
+                if 1 <= thread_count <= 16:
+                    return thread_count
+                else:
+                    print("Please enter a number between 1 and 16.")
+            except ValueError:
+                print("Please enter a valid number.")
+    
+    def get_split_files_option(self) -> bool:
+        """Get whether to split paired-end files."""
+        print(f"\nSplit paired-end files? (recommended for most datasets)")
+        while True:
+            user_input = input("Split files (y/n, default: y): ").strip().lower()
+            
+            if not user_input or user_input in ['y', 'yes']:
+                return True
+            elif user_input in ['n', 'no']:
+                return False
+            else:
+                print("Please enter 'y' for yes or 'n' for no.")
